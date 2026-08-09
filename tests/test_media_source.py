@@ -107,7 +107,7 @@ async def test_root_and_all_channel_browsing(media_source):
     assert news.can_play is True
     assert news.media_class == "video"
     assert news.media_content_type == "video/mp4"
-    assert news.thumbnail == "https://media.example.invalid/api/channels/logos/17/cache/"
+    assert news.thumbnail == f"/api/dispatcharr/{ENTRY_ID}/artwork/17"
     assert all(child.media_content_type.startswith("video/") for child in all_channels.children)
 
 

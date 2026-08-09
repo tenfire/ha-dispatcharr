@@ -86,16 +86,13 @@ class DispatcharrMediaSource(MediaSource):
 
     @staticmethod
     def _logo_url(coordinator, channel):
-        logo = channel.get("logo_url") or channel.get("logo")
-        if isinstance(logo, str) and logo:
-            return logo
         logo_id = channel.get("effective_logo_id") or channel.get("logo_id")
         if logo_id is None:
             return None
-        base = coordinator.entry.data.get(CONF_PLAYBACK_URL, coordinator.entry.data["url"]).rstrip(
-            "/"
+        return (
+            f"/api/dispatcharr/{quote(coordinator.entry.entry_id, safe='')}/artwork/"
+            f"{quote(str(logo_id), safe='')}"
         )
-        return f"{base}/api/channels/logos/{quote(str(logo_id), safe='')}/cache/"
 
     @staticmethod
     def _automatic_output_profile(coordinator):
