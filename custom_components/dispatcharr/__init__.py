@@ -9,6 +9,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import DispatcharrClient
+from .artwork import DispatcharrArtworkView
 from .const import (
     CONF_API_KEY,
     CONF_VERIFY_SSL,
@@ -18,8 +19,13 @@ from .const import (
 )
 from .coordinator import DispatcharrCoordinator
 
+_DATA_ARTWORK_VIEW = f"{DOMAIN}_artwork_view"
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    if _DATA_ARTWORK_VIEW not in hass.data:
+        hass.http.register_view(DispatcharrArtworkView(hass))
+        hass.data[_DATA_ARTWORK_VIEW] = True
     client = DispatcharrClient(
         async_get_clientsession(hass),
         entry.data[CONF_URL],

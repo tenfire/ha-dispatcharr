@@ -59,6 +59,35 @@ class DispatcharrClient:
         except (ClientError, TimeoutError) as err:
             raise DispatcharrConnectionError(str(err)) from err
 
+    async def bytes(self, path: str, *, max_bytes: int) -> bytes:
+        """Fetch bounded binary content while the response context is open."""
+        try:
+            async with self.session.get(
+                f"{self.base_url}{path}",
+                headers={"X-API-Key": self.api_key},
+                ssl=self.verify_ssl,
+                timeout=ClientTimeout(total=30),
+            ) as response:
+                if response.status in (401, 403):
+                    raise DispatcharrAuthError(
+                        f"Dispatcharr rejected the request ({response.status})"
+                    )
+                if response.status >= 400:
+                    raise DispatcharrError(
+                        f"Dispatcharr returned {response.status} fetching artwork"
+                    )
+                content_length = response.content_length
+                if content_length is not None and content_length > max_bytes:
+                    raise DispatcharrError("Dispatcharr artwork is too large")
+                content = await response.content.read(max_bytes + 1)
+                if len(content) > max_bytes:
+                    raise DispatcharrError("Dispatcharr artwork is too large")
+                return content
+        except DispatcharrError:
+            raise
+        except (ClientError, TimeoutError) as err:
+            raise DispatcharrConnectionError(str(err)) from err
+
     async def paginated(self, path: str) -> list[dict[str, Any]]:
         items: list[dict[str, Any]] = []
         next_path: str | None = path

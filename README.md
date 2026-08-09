@@ -4,7 +4,7 @@ A friendly, resource-efficient [HACS](https://hacs.xyz/) custom integration that
 
 ## Features
 
-- Browse channel-number-sorted **All channels**, alphabetically sorted **Groups**, and **Profiles** in Home Assistant's media browser, including available channel logos.
+- Browse channel-number-sorted **All channels**, alphabetically sorted **Groups**, and **Profiles** in Home Assistant's media browser, including normalized channel logos that fit both grid and list layouts.
 - Search channels and resolve stable UUID-backed media items for existing media-player entities.
 - Aggregate sensors for channels, groups, M3U accounts, EPG sources, failed EPG sources, and optional proxy activity.
 - Global and per-source buttons that queue M3U and EPG refreshes.
