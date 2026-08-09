@@ -135,6 +135,35 @@ async def test_direct_channel_browse_rejects_unknown_uuid(media_source):
 
 
 @pytest.mark.asyncio
+async def test_direct_programme_browse_returns_current_epg_title(media_source):
+    """Current EPG data is available through a separate public metadata leaf."""
+    source, hass = media_source
+
+    programme = await source.async_browse_media(
+        item(hass, f"entry/{ENTRY_ID}/programme/{CHANNEL_ID}")
+    )
+
+    assert programme.domain == DOMAIN
+    assert programme.identifier == f"entry/{ENTRY_ID}/programme/{CHANNEL_ID}"
+    assert programme.title == "Synthetic bulletin"
+    assert programme.can_play is False
+    assert programme.can_expand is False
+    assert programme.thumbnail is None
+
+
+@pytest.mark.asyncio
+async def test_direct_programme_browse_rejects_missing_epg(media_source):
+    """A channel without a current programme has no programme metadata leaf."""
+    source, hass = media_source
+
+    with pytest.raises(ValueError, match="No current Dispatcharr programme"):
+        await source.async_browse_media(item(hass, f"entry/{ENTRY_ID}/programme/channel-beta"))
+
+    with pytest.raises(ValueError, match="Unknown Dispatcharr channel"):
+        await source.async_browse_media(item(hass, f"entry/{ENTRY_ID}/programme/not-present"))
+
+
+@pytest.mark.asyncio
 async def test_default_browse_mime_is_mpeg_ts(media_source):
     source, hass = media_source
     hass.data[DOMAIN][ENTRY_ID].entry.options.pop(CONF_OUTPUT_FORMAT)
