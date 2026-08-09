@@ -34,11 +34,19 @@ The target player—not Home Assistant—fetches the resolved stream URL. Conseq
 - Home Assistant's API-key header is not forwarded by Chromecast;
 - MPEG-TS and source codecs may not work on every receiver.
 
-Choose a compatible Dispatcharr output profile/format when needed. Network reachability does not guarantee codec compatibility, so test the intended receiver.
+Raw MPEG-TS remains the default passthrough. For a standard Chromecast, Nest Hub, or web receiver, select `fmp4` and a Dispatcharr output profile that produces H.264 video with AAC audio. The integration only requests that Dispatcharr output; it does not proxy or transcode media inside Home Assistant. Network reachability does not guarantee codec compatibility, so test the intended receiver.
 
-## Options and refresh operations
+## Entities and refresh operations
 
-Options configure polling, channel/output profiles, output format, and optional proxy-stat polling. Refresh buttons queue work; HTTP 202 means **accepted/queued**, not completed.
+The integration creates one device with low-cardinality status sensors:
+
+- **Channels**, **Groups**, **M3U accounts**, and **EPG sources** are catalogue counts.
+- **Failed EPG sources** counts sources whose latest status is failed/error.
+- **Active streams** is optional and appears only when proxy-stat polling is enabled.
+
+Refresh buttons explicitly identify their scope. **Refresh all M3U accounts** and **Refresh all EPG sources** queue global updates; per-account/source buttons queue only the named item. HTTP 202 means **accepted/queued**, not completed. These controls do not delete sources or channel data.
+
+Options configure polling, output profile, output format, and optional proxy-stat polling.
 
 Advanced force import example:
 

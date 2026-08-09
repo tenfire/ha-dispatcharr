@@ -35,8 +35,13 @@ class RefreshButton(CoordinatorEntity, ButtonEntity):
         self.kind = kind
         self.item_id = item_id
         self._last = 0.0
-        self.entity_description = ButtonEntityDescription(key=key, translation_key=key)
-        self._attr_name = label
+        self.entity_description = ButtonEntityDescription(
+            key=key,
+            translation_key=key,
+            icon="mdi:refresh",
+        )
+        noun = "M3U account" if kind == "m3u" else "EPG source"
+        self._attr_name = f"Refresh {noun}: {label}" if label else f"Refresh all {noun}s"
         self._attr_unique_id = f"{c.entry.entry_id}_{kind}_{item_id or 'all'}"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, c.entry.entry_id)},

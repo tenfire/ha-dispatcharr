@@ -98,6 +98,7 @@ async def test_refresh_button_routes_and_debounces():
         last_update_success=True,
     )
     button = RefreshButton(value, "epg", 7, "refresh_epg_source", "Synthetic source")
+    assert button.name == "Refresh EPG source: Synthetic source"
     with patch("custom_components.dispatcharr.button.time.monotonic", side_effect=[20.0, 25.0]):
         await button.async_press()
         await button.async_press()

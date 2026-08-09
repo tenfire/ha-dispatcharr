@@ -84,7 +84,9 @@ class DispatcharrMediaSource(MediaSource):
         return BrowseMediaSource(
             domain=DOMAIN,
             identifier=self._prefix(coordinator, f"channel/{uuid}"),
-            media_class=MediaClass.CHANNEL,
+            # Browse-time compatibility uses broad HA media categories. The
+            # concrete stream MIME is returned later by async_resolve_media.
+            media_class=MediaClass.VIDEO,
             media_content_type=MediaType.VIDEO,
             title=title,
             can_play=True,
@@ -102,6 +104,17 @@ class DispatcharrMediaSource(MediaSource):
             title=title,
             can_play=False,
             can_expand=True,
+        )
+
+    @staticmethod
+    def _linked(channel, kind, raw_id):
+        """Return whether a channel belongs to a group or output profile."""
+        candidates = {raw_id, int(raw_id) if str(raw_id).isdigit() else raw_id}
+        values = channel.get("groups" if kind == "group" else "profiles", [])
+        direct = channel.get("channel_group_id" if kind == "group" else "profile_id")
+        return direct in candidates or any(
+            (value.get("id") if isinstance(value, dict) else value) in candidates
+            for value in values
         )
 
     async def async_browse_media(self, item: MediaSourceItem) -> BrowseMediaSource:
@@ -136,26 +149,20 @@ class DispatcharrMediaSource(MediaSource):
         elif ident in ("groups", "profiles"):
             singular = ident.removesuffix("s")
             children = [
-                self._folder(coordinator, f"{singular}/{row.get('id')}", self._name(row))
+                self._folder(coordinator, f"{singular}/{row['id']}", self._name(row))
                 for row in data[ident]
+                if row.get("id") is not None
+                and any(self._linked(channel, singular, row["id"]) for channel in data["channels"])
             ]
             title = ident.title()
         elif ident.startswith(("group/", "profile/")):
             kind, raw_id = ident.split("/", 1)
             if not raw_id:
                 raise ValueError("Invalid Dispatcharr media identifier")
-            candidates = {raw_id, int(raw_id) if raw_id.isdigit() else raw_id}
-
-            def linked(channel):
-                values = channel.get("groups" if kind == "group" else "profiles", [])
-                direct = channel.get("channel_group_id" if kind == "group" else "profile_id")
-                return direct in candidates or any(
-                    (value.get("id") if isinstance(value, dict) else value) in candidates
-                    for value in values
-                )
-
             children = [
-                self._leaf(coordinator, channel) for channel in data["channels"] if linked(channel)
+                self._leaf(coordinator, channel)
+                for channel in data["channels"]
+                if self._linked(channel, kind, raw_id)
             ]
             title = kind.title()
         else:

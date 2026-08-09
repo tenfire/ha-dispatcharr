@@ -14,12 +14,40 @@ class Description(SensorEntityDescription):
 
 
 DESCRIPTIONS = (
-    Description(key="channels", translation_key="channels", data_key="channels"),
-    Description(key="groups", translation_key="groups", data_key="groups"),
-    Description(key="m3u_accounts", translation_key="m3u_accounts", data_key="accounts"),
-    Description(key="epg_sources", translation_key="epg_sources", data_key="sources"),
-    Description(key="failed_epg_sources", translation_key="failed_epg_sources"),
-    Description(key="active_streams", translation_key="active_streams"),
+    Description(
+        key="channels",
+        translation_key="channels",
+        data_key="channels",
+        icon="mdi:television-play",
+    ),
+    Description(
+        key="groups",
+        translation_key="groups",
+        data_key="groups",
+        icon="mdi:folder-multiple",
+    ),
+    Description(
+        key="m3u_accounts",
+        translation_key="m3u_accounts",
+        data_key="accounts",
+        icon="mdi:playlist-play",
+    ),
+    Description(
+        key="epg_sources",
+        translation_key="epg_sources",
+        data_key="sources",
+        icon="mdi:calendar-text",
+    ),
+    Description(
+        key="failed_epg_sources",
+        translation_key="failed_epg_sources",
+        icon="mdi:alert-circle-outline",
+    ),
+    Description(
+        key="active_streams",
+        translation_key="active_streams",
+        icon="mdi:broadcast",
+    ),
 )
 
 
