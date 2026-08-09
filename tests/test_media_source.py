@@ -8,7 +8,7 @@ import pytest
 from homeassistant.components.media_player.browse_media import SearchMediaQuery
 from homeassistant.components.media_source import MediaSourceItem
 
-from custom_components.dispatcharr.const import DOMAIN
+from custom_components.dispatcharr.const import CONF_OUTPUT_FORMAT, DOMAIN
 from custom_components.dispatcharr.media_source import DispatcharrMediaSource
 
 ENTRY_ID = "synthetic-entry"
@@ -94,7 +94,18 @@ async def test_root_and_all_channel_browsing(media_source):
     assert all_channels.children[0].identifier == f"entry/{ENTRY_ID}/channel/{CHANNEL_ID}"
     assert all_channels.children[0].can_play is True
     assert all_channels.children[0].media_class == "video"
-    assert all_channels.children[0].media_content_type == "video"
+    assert all_channels.children[0].media_content_type == "video/mp4"
+    assert all(child.media_content_type.startswith("video/") for child in all_channels.children)
+
+
+@pytest.mark.asyncio
+async def test_default_browse_mime_is_mpeg_ts(media_source):
+    source, hass = media_source
+    hass.data[DOMAIN][ENTRY_ID].entry.options.pop(CONF_OUTPUT_FORMAT)
+
+    all_channels = await source.async_browse_media(item(hass, f"entry/{ENTRY_ID}/all"))
+
+    assert {child.media_content_type for child in all_channels.children} == {"video/mp2t"}
 
 
 @pytest.mark.asyncio
