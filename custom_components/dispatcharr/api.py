@@ -135,7 +135,15 @@ class DispatcharrClient:
         data = await self.request(
             "POST", "/api/epg/current-programs/", json={"channel_uuids": uuids}
         )
-        return data if isinstance(data, dict) else {}
+        if isinstance(data, dict):
+            return data
+        if isinstance(data, list):
+            return {
+                str(program["channel_uuid"]): program
+                for program in data
+                if isinstance(program, dict) and program.get("channel_uuid")
+            }
+        return {}
 
     async def proxy_stats(self) -> dict[str, Any]:
         data = await self.request("GET", "/proxy/stats/")

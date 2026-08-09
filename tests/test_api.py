@@ -83,6 +83,48 @@ async def test_output_profiles_use_public_api_route():
 
 
 @pytest.mark.asyncio
+async def test_current_program_list_is_normalized_by_channel_uuid():
+    """Dispatcharr's list response becomes the coordinator's stable UUID map."""
+    client = StubClient(
+        [
+            [
+                {"channel_uuid": "channel-one", "title": "Synthetic bulletin"},
+                {"channel_uuid": "channel-two", "title": "Synthetic documentary"},
+                {"title": "Missing channel identity"},
+                "malformed",
+            ]
+        ]
+    )
+
+    assert await client.current_programs(["channel-one", "channel-two"]) == {
+        "channel-one": {
+            "channel_uuid": "channel-one",
+            "title": "Synthetic bulletin",
+        },
+        "channel-two": {
+            "channel_uuid": "channel-two",
+            "title": "Synthetic documentary",
+        },
+    }
+    assert client.paths == [
+        (
+            "POST",
+            "/api/epg/current-programs/",
+            {"channel_uuids": ["channel-one", "channel-two"]},
+        )
+    ]
+
+
+@pytest.mark.asyncio
+async def test_current_program_dictionary_remains_compatible():
+    """Older dictionary-shaped API responses remain supported."""
+    payload = {"channel-one": {"title": "Synthetic bulletin"}}
+    client = StubClient([payload])
+
+    assert await client.current_programs(["channel-one"]) == payload
+
+
+@pytest.mark.asyncio
 async def test_invalid_paginated_shape_is_rejected():
     client = StubClient(["not-json-object"])
     with pytest.raises(DispatcharrError):
