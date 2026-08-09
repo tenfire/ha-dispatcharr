@@ -81,13 +81,14 @@ class DispatcharrMediaSource(MediaSource):
         channel_name = self._name(channel)
         program_title = self._program_title(coordinator.data.get("programs", {}), uuid)
         title = f"{channel_name} — {program_title}" if program_title else channel_name
+        output_format = coordinator.entry.options.get(CONF_OUTPUT_FORMAT, "")
         return BrowseMediaSource(
             domain=DOMAIN,
             identifier=self._prefix(coordinator, f"channel/{uuid}"),
-            # Browse-time compatibility uses broad HA media categories. The
-            # concrete stream MIME is returned later by async_resolve_media.
             media_class=MediaClass.VIDEO,
-            media_content_type=MediaType.VIDEO,
+            # The frontend target picker matches MIME patterns such as
+            # ``video/*``; the generic ``video`` category is filtered out.
+            media_content_type="video/mp4" if output_format == "fmp4" else "video/mp2t",
             title=title,
             can_play=True,
             can_expand=False,
