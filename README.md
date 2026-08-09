@@ -25,7 +25,7 @@ Use a least-privilege API key where possible. It is stored in the Home Assistant
 
 ## Playing and casting
 
-Open an existing media player's media browser, select **Dispatcharr**, then browse or search for a channel. Automations may also use its `media-source://dispatcharr/...` identifier. Browsing a channel's stable identifier directly returns that channel's plain name and logo, allowing compatible media-player integrations to enrich now-playing state without accessing Dispatcharr internals.
+Open an existing media player's media browser, select **Dispatcharr**, then browse or search for a channel. Automations may also use its `media-source://dispatcharr/...` identifier. Browsing a channel's stable identifier directly returns that channel's plain name and logo. The separate `entry/<entry-id>/programme/<channel-uuid>` metadata leaf returns the current programme title when EPG data exists. These public media-source contracts let compatible media players enrich now-playing state without accessing Dispatcharr internals. Artwork remains protected by Home Assistant authentication; consumers that fetch it server-side must use Home Assistant's signed-path mechanism.
 
 The target player—not Home Assistant—fetches the resolved stream URL. Consequently:
 

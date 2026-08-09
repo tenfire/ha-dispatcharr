@@ -229,17 +229,30 @@ class DispatcharrMediaSource(MediaSource):
                 if self._linked(channel, kind, raw_id)
             ]
             title = kind.title()
-        elif ident.startswith("channel/"):
-            uuid = ident.removeprefix("channel/")
+        elif ident.startswith(("channel/", "programme/")):
+            kind, uuid = ident.split("/", 1)
             channel = next(
                 (value for value in data["channels"] if self._channel_id(value) == uuid),
                 None,
             )
             if channel is None:
                 raise ValueError("Unknown Dispatcharr channel")
-            leaf = self._leaf(coordinator, channel)
-            leaf.title = self._name(channel)
-            return leaf
+            if kind == "channel":
+                leaf = self._leaf(coordinator, channel)
+                leaf.title = self._name(channel)
+                return leaf
+            program_title = self._program_title(data.get("programs", {}), uuid)
+            if program_title is None:
+                raise ValueError("No current Dispatcharr programme")
+            return BrowseMediaSource(
+                domain=DOMAIN,
+                identifier=self._prefix(coordinator, f"programme/{uuid}"),
+                media_class=MediaClass.VIDEO,
+                media_content_type=MediaType.VIDEO,
+                title=program_title,
+                can_play=False,
+                can_expand=False,
+            )
         else:
             raise ValueError("Unknown Dispatcharr media identifier")
 
