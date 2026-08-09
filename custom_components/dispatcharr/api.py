@@ -90,6 +90,10 @@ class DispatcharrClient:
     async def profiles(self) -> list[dict[str, Any]]:
         return await self.paginated("/api/channels/profiles/")
 
+    async def output_profiles(self) -> list[dict[str, Any]]:
+        """Return Dispatcharr stream output profiles."""
+        return await self.paginated("/api/core/outputprofiles/")
+
     async def m3u_accounts(self) -> list[dict[str, Any]]:
         return await self.paginated("/api/m3u/accounts/")
 

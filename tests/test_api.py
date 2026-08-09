@@ -75,6 +75,14 @@ async def test_pagination_follows_next_page():
 
 
 @pytest.mark.asyncio
+async def test_output_profiles_use_public_api_route():
+    client = StubClient([[{"id": 12}]])
+
+    assert await client.output_profiles() == [{"id": 12}]
+    assert client.paths == [("GET", "/api/core/outputprofiles/", None)]
+
+
+@pytest.mark.asyncio
 async def test_invalid_paginated_shape_is_rejected():
     client = StubClient(["not-json-object"])
     with pytest.raises(DispatcharrError):

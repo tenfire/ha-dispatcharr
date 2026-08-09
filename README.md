@@ -4,7 +4,7 @@ A friendly, resource-efficient [HACS](https://hacs.xyz/) custom integration that
 
 ## Features
 
-- Browse **All channels**, channel **Groups**, and **Profiles** in Home Assistant's media browser.
+- Browse channel-number-sorted **All channels**, alphabetically sorted **Groups**, and **Profiles** in Home Assistant's media browser, including available channel logos.
 - Search channels and resolve stable UUID-backed media items for existing media-player entities.
 - Aggregate sensors for channels, groups, M3U accounts, EPG sources, failed EPG sources, and optional proxy activity.
 - Global and per-source buttons that queue M3U and EPG refreshes.
@@ -34,7 +34,7 @@ The target player—not Home Assistant—fetches the resolved stream URL. Conseq
 - Home Assistant's API-key header is not forwarded by Chromecast;
 - MPEG-TS and source codecs may not work on every receiver.
 
-Raw MPEG-TS remains the default passthrough. For a standard Chromecast, Nest Hub, or web receiver, select `fmp4` and a Dispatcharr output profile that produces H.264 video with AAC audio. The integration only requests that Dispatcharr output; it does not proxy or transcode media inside Home Assistant. Network reachability does not guarantee codec compatibility, so test the intended receiver.
+For standard Chromecast, Nest Hub, and web receivers, the integration conservatively auto-selects `fmp4` when Dispatcharr exposes exactly one active AAC output profile. Dispatcharr then remuxes/transcodes the stream; Home Assistant only supplies the direct URL and does not proxy or transcode media itself. Explicit output-format/profile options override automatic selection. If no unique AAC profile exists, raw MPEG-TS passthrough remains the fallback and you should choose an appropriate Dispatcharr profile manually. Network reachability does not guarantee codec compatibility, so test the intended receiver.
 
 ## Entities and refresh operations
 

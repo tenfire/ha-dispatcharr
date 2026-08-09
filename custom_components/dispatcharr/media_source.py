@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import json
+import math
+from urllib.parse import quote
+
 from homeassistant.components.media_player.browse_media import SearchMedia, SearchMediaQuery
 from homeassistant.components.media_player.const import MediaClass, MediaType
 from homeassistant.components.media_source import (
@@ -62,6 +66,65 @@ class DispatcharrMediaSource(MediaSource):
     def _name(row):
         return str(row.get("name") or row.get("channel_name") or "Channel")
 
+    @classmethod
+    def _name_key(cls, row):
+        return cls._name(row).casefold()
+
+    @classmethod
+    def _channel_key(cls, channel):
+        """Sort by effective Dispatcharr channel number, then stable text fields."""
+        raw_number = channel.get("effective_channel_number")
+        if raw_number is None:
+            raw_number = channel.get("channel_number")
+        try:
+            number = float(raw_number)
+            if not math.isfinite(number):
+                raise ValueError
+        except TypeError, ValueError:
+            number = math.inf
+        return number, cls._name_key(channel), cls._channel_id(channel)
+
+    @staticmethod
+    def _logo_url(coordinator, channel):
+        logo = channel.get("logo_url") or channel.get("logo")
+        if isinstance(logo, str) and logo:
+            return logo
+        logo_id = channel.get("effective_logo_id") or channel.get("logo_id")
+        if logo_id is None:
+            return None
+        base = coordinator.entry.data.get(CONF_PLAYBACK_URL, coordinator.entry.data["url"]).rstrip(
+            "/"
+        )
+        return f"{base}/api/channels/logos/{quote(str(logo_id), safe='')}/cache/"
+
+    @staticmethod
+    def _automatic_output_profile(coordinator):
+        """Choose only an unambiguous active AAC profile."""
+        matches = []
+        for profile in coordinator.data.get("output_profiles", []):
+            if not profile.get("is_active", True) or profile.get("id") is None:
+                continue
+            details = json.dumps(
+                {
+                    "command": profile.get("command"),
+                    "parameters": profile.get("parameters"),
+                }
+            ).casefold()
+            if "aac" in details:
+                matches.append(profile["id"])
+        return matches[0] if len(matches) == 1 else None
+
+    @classmethod
+    def _output_settings(cls, coordinator):
+        options = coordinator.entry.options
+        output_format = options.get(CONF_OUTPUT_FORMAT)
+        output_profile = options.get(CONF_OUTPUT_PROFILE)
+        if not output_format and output_profile is None:
+            automatic_profile = cls._automatic_output_profile(coordinator)
+            if automatic_profile is not None:
+                return "fmp4", automatic_profile
+        return output_format or "", output_profile
+
     @staticmethod
     def _program_title(programs, channel_uuid):
         program = programs.get(channel_uuid) if isinstance(programs, dict) else None
@@ -77,11 +140,11 @@ class DispatcharrMediaSource(MediaSource):
 
     def _leaf(self, coordinator, channel):
         uuid = self._channel_id(channel)
-        logo = channel.get("logo_url") or channel.get("logo")
+        logo = self._logo_url(coordinator, channel)
         channel_name = self._name(channel)
         program_title = self._program_title(coordinator.data.get("programs", {}), uuid)
         title = f"{channel_name} — {program_title}" if program_title else channel_name
-        output_format = coordinator.entry.options.get(CONF_OUTPUT_FORMAT, "")
+        output_format, _ = self._output_settings(coordinator)
         return BrowseMediaSource(
             domain=DOMAIN,
             identifier=self._prefix(coordinator, f"channel/{uuid}"),
@@ -145,13 +208,16 @@ class DispatcharrMediaSource(MediaSource):
             ]
             title = coordinator.entry.title or "Dispatcharr"
         elif ident == "all":
-            children = [self._leaf(coordinator, channel) for channel in data["channels"]]
+            children = [
+                self._leaf(coordinator, channel)
+                for channel in sorted(data["channels"], key=self._channel_key)
+            ]
             title = "All channels"
         elif ident in ("groups", "profiles"):
             singular = ident.removesuffix("s")
             children = [
                 self._folder(coordinator, f"{singular}/{row['id']}", self._name(row))
-                for row in data[ident]
+                for row in sorted(data[ident], key=self._name_key)
                 if row.get("id") is not None
                 and any(self._linked(channel, singular, row["id"]) for channel in data["channels"])
             ]
@@ -162,7 +228,7 @@ class DispatcharrMediaSource(MediaSource):
                 raise ValueError("Invalid Dispatcharr media identifier")
             children = [
                 self._leaf(coordinator, channel)
-                for channel in data["channels"]
+                for channel in sorted(data["channels"], key=self._channel_key)
                 if self._linked(channel, kind, raw_id)
             ]
             title = kind.title()
@@ -189,11 +255,11 @@ class DispatcharrMediaSource(MediaSource):
             raise ValueError("Unknown Dispatcharr channel")
         entry = coordinator.entry
         base = entry.data.get(CONF_PLAYBACK_URL, entry.data["url"])
-        output = entry.options.get(CONF_OUTPUT_FORMAT, "")
+        output, output_profile = self._output_settings(coordinator)
         url = DispatcharrClient.stream_url(
             base,
             uuid,
-            output_profile=entry.options.get(CONF_OUTPUT_PROFILE),
+            output_profile=output_profile,
             output_format=output,
         )
         return PlayMedia(url=url, mime_type="video/mp4" if output == "fmp4" else "video/mp2t")
