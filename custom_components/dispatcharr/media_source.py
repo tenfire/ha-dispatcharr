@@ -229,6 +229,17 @@ class DispatcharrMediaSource(MediaSource):
                 if self._linked(channel, kind, raw_id)
             ]
             title = kind.title()
+        elif ident.startswith("channel/"):
+            uuid = ident.removeprefix("channel/")
+            channel = next(
+                (value for value in data["channels"] if self._channel_id(value) == uuid),
+                None,
+            )
+            if channel is None:
+                raise ValueError("Unknown Dispatcharr channel")
+            leaf = self._leaf(coordinator, channel)
+            leaf.title = self._name(channel)
+            return leaf
         else:
             raise ValueError("Unknown Dispatcharr media identifier")
 

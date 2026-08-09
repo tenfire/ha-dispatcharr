@@ -112,6 +112,29 @@ async def test_root_and_all_channel_browsing(media_source):
 
 
 @pytest.mark.asyncio
+async def test_direct_channel_browse_returns_plain_name_and_artwork(media_source):
+    """A playable channel identifier is also a public metadata lookup."""
+    source, hass = media_source
+
+    channel = await source.async_browse_media(item(hass, f"entry/{ENTRY_ID}/channel/{CHANNEL_ID}"))
+
+    assert channel.title == "Synthetic News"
+    assert channel.identifier == f"entry/{ENTRY_ID}/channel/{CHANNEL_ID}"
+    assert channel.can_play is True
+    assert channel.can_expand is False
+    assert channel.thumbnail == f"/api/dispatcharr/{ENTRY_ID}/artwork/17"
+
+
+@pytest.mark.asyncio
+async def test_direct_channel_browse_rejects_unknown_uuid(media_source):
+    """Direct metadata lookup cannot synthesize nonexistent channels."""
+    source, hass = media_source
+
+    with pytest.raises(ValueError, match="Unknown Dispatcharr channel"):
+        await source.async_browse_media(item(hass, f"entry/{ENTRY_ID}/channel/not-present"))
+
+
+@pytest.mark.asyncio
 async def test_default_browse_mime_is_mpeg_ts(media_source):
     source, hass = media_source
     hass.data[DOMAIN][ENTRY_ID].entry.options.pop(CONF_OUTPUT_FORMAT)
