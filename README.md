@@ -25,7 +25,7 @@ Use a least-privilege API key where possible. It is stored in the Home Assistant
 
 ## Playing and casting
 
-Open an existing media player's media browser, select **Dispatcharr**, then browse or search for a channel. Automations may also use its `media-source://dispatcharr/...` identifier.
+Open an existing media player's media browser, select **Dispatcharr**, then browse or search for a channel. Automations may also use its `media-source://dispatcharr/...` identifier. Browsing a channel's stable identifier directly returns that channel's plain name and logo, allowing compatible media-player integrations to enrich now-playing state without accessing Dispatcharr internals.
 
 The target player—not Home Assistant—fetches the resolved stream URL. Consequently:
 
