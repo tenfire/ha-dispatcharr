@@ -1,0 +1,74 @@
+{
+  "title": "Dispatcharr",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Dispatcharr",
+        "description": "Connect Home Assistant to your Dispatcharr server.",
+        "data": {
+          "url": "API base URL",
+          "api_key": "API key",
+          "playback_url": "Playback base URL",
+          "verify_ssl": "Verify SSL certificate"
+        },
+        "data_description": {
+          "playback_url": "Optional URL that media players use to fetch streams. Leave empty to use the API URL."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reconnect Dispatcharr",
+        "description": "Update the connection details and API key.",
+        "data": {
+          "url": "API base URL",
+          "api_key": "API key",
+          "playback_url": "Playback base URL",
+          "verify_ssl": "Verify SSL certificate"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to Dispatcharr",
+      "invalid_auth": "The API key was rejected",
+      "unknown": "Unexpected response from Dispatcharr"
+    },
+    "abort": {
+      "already_configured": "This Dispatcharr server is already configured",
+      "reauth_successful": "Reauthentication was successful"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Dispatcharr options",
+        "data": {
+          "scan_interval": "Scan interval (seconds)",
+          "output_profile": "Output profile ID",
+          "output_format": "Output format",
+          "proxy_stats": "Fetch proxy statistics"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "channels": {"name": "Channels"},
+      "groups": {"name": "Groups"},
+      "m3u_accounts": {"name": "M3U accounts"},
+      "epg_sources": {"name": "EPG sources"},
+      "failed_epg_sources": {"name": "Failed EPG sources"},
+      "active_streams": {"name": "Active streams"}
+    },
+    "button": {
+      "refresh_m3u": {"name": "Refresh all M3U accounts"},
+      "refresh_epg": {"name": "Refresh all EPG sources"},
+      "refresh_m3u_account": {"name": "Refresh M3U account"},
+      "refresh_epg_source": {"name": "Refresh EPG source"}
+    }
+  },
+  "services": {
+    "force_epg_refresh": {
+      "name": "Force EPG refresh",
+      "description": "Queue a forced refresh for one or all EPG sources."
+    }
+  }
+}

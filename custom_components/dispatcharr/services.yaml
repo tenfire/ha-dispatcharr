@@ -1,0 +1,20 @@
+force_epg_refresh:
+  name: Force EPG refresh
+  description: Queue a forced refresh for one or all EPG sources.
+  fields:
+    config_entry_id:
+      name: Config entry
+      description: Optional Dispatcharr config entry ID when multiple servers are configured.
+      required: false
+      example: synthetic-entry-id
+      selector:
+        text:
+    source_id:
+      name: Source ID
+      description: Optional numeric EPG source ID. Leave empty to refresh all sources.
+      required: false
+      example: 1
+      selector:
+        number:
+          min: 1
+          mode: box
