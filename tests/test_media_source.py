@@ -55,8 +55,14 @@ def media_source():
                     "profile_id": 5,
                 },
             ],
-            "groups": [{"id": 8, "name": "Example group"}],
-            "profiles": [{"id": 4, "name": "Example profile"}],
+            "groups": [
+                {"id": 8, "name": "Example group"},
+                {"id": 99, "name": "Empty group"},
+            ],
+            "profiles": [
+                {"id": 4, "name": "Example profile"},
+                {"id": 99, "name": "Unused profile"},
+            ],
             "programs": {CHANNEL_ID: {"title": "Synthetic bulletin"}},
         },
     )
@@ -87,6 +93,8 @@ async def test_root_and_all_channel_browsing(media_source):
     ]
     assert all_channels.children[0].identifier == f"entry/{ENTRY_ID}/channel/{CHANNEL_ID}"
     assert all_channels.children[0].can_play is True
+    assert all_channels.children[0].media_class == "video"
+    assert all_channels.children[0].media_content_type == "video"
 
 
 @pytest.mark.asyncio
@@ -96,6 +104,11 @@ async def test_group_and_profile_filtering(media_source):
     profile = await source.async_browse_media(item(hass, f"entry/{ENTRY_ID}/profile/4"))
     assert [child.title for child in group.children] == ["Synthetic News — Synthetic bulletin"]
     assert [child.title for child in profile.children] == ["Synthetic News — Synthetic bulletin"]
+
+    groups = await source.async_browse_media(item(hass, f"entry/{ENTRY_ID}/groups"))
+    profiles = await source.async_browse_media(item(hass, f"entry/{ENTRY_ID}/profiles"))
+    assert [child.title for child in groups.children] == ["Example group"]
+    assert [child.title for child in profiles.children] == ["Example profile"]
 
 
 @pytest.mark.asyncio
