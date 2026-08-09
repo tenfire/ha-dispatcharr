@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+from homeassistant.components.http import HomeAssistantHTTP
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -37,9 +37,10 @@ async def test_setup_service_and_unload(hass: HomeAssistant, enable_custom_integ
         "programs": {},
         "stats": {},
     }
+    hass.data.pop(f"{DOMAIN}_artwork_view", None)
     register_view = Mock()
-    hass.http = SimpleNamespace(register_view=register_view)
     with (
+        patch.object(HomeAssistantHTTP, "register_view", register_view),
         patch(
             "custom_components.dispatcharr.coordinator.DispatcharrCoordinator._async_update_data",
             AsyncMock(return_value=catalogue),
