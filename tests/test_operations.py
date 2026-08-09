@@ -20,6 +20,7 @@ class FakeClient:
     channels = AsyncMock(return_value=[{"uuid": "channel-one", "name": "Private name"}])
     groups = AsyncMock(return_value=[{"id": 1, "name": "Private group"}])
     profiles = AsyncMock(return_value=[{"id": 2, "name": "Private profile"}])
+    output_profiles = AsyncMock(return_value=[{"id": 5, "name": "Private output profile"}])
     m3u_accounts = AsyncMock(return_value=[{"id": 3, "name": "Private source"}])
     epg_sources = AsyncMock(return_value=[{"id": 4, "status": "error"}])
     current_programs = AsyncMock(return_value={"channel-one": {"title": "Private show"}})
@@ -51,6 +52,7 @@ async def test_coordinator_aggregates_catalogue_and_optional_stats():
         "channels",
         "groups",
         "profiles",
+        "output_profiles",
         "accounts",
         "sources",
         "programs",

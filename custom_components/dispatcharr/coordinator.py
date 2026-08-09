@@ -29,10 +29,11 @@ class DispatcharrCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:
-            channels, groups, profiles, accounts, sources = await asyncio.gather(
+            channels, groups, profiles, output_profiles, accounts, sources = await asyncio.gather(
                 self.client.channels(),
                 self.client.groups(),
                 self.client.profiles(),
+                self.client.output_profiles(),
                 self.client.m3u_accounts(),
                 self.client.epg_sources(),
             )
@@ -48,6 +49,7 @@ class DispatcharrCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "channels": channels,
                 "groups": groups,
                 "profiles": profiles,
+                "output_profiles": output_profiles,
                 "accounts": accounts,
                 "sources": sources,
                 "programs": programs,

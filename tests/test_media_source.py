@@ -44,19 +44,22 @@ def media_source():
                 {
                     "uuid": CHANNEL_ID,
                     "name": "Synthetic News",
+                    "effective_channel_number": 20.0,
                     "channel_group_id": 8,
                     "profile_id": 4,
-                    "logo_url": "https://assets.example.invalid/logo.png",
+                    "effective_logo_id": 17,
                 },
                 {
                     "uuid": "channel-beta",
                     "name": "Example Sports",
+                    "effective_channel_number": 3.0,
                     "channel_group_id": 9,
                     "profile_id": 5,
                 },
             ],
             "groups": [
                 {"id": 8, "name": "Example group"},
+                {"id": 9, "name": "alpha group"},
                 {"id": 99, "name": "Empty group"},
             ],
             "profiles": [
@@ -64,6 +67,14 @@ def media_source():
                 {"id": 99, "name": "Unused profile"},
             ],
             "programs": {CHANNEL_ID: {"title": "Synthetic bulletin"}},
+            "output_profiles": [
+                {
+                    "id": 12,
+                    "name": "Synthetic AAC",
+                    "is_active": True,
+                    "parameters": {"audio_codec": "aac", "video_codec": "copy"},
+                }
+            ],
         },
     )
     hass = SimpleNamespace(
@@ -88,13 +99,15 @@ async def test_root_and_all_channel_browsing(media_source):
 
     all_channels = await source.async_browse_media(item(hass, f"entry/{ENTRY_ID}/all"))
     assert [child.title for child in all_channels.children] == [
-        "Synthetic News — Synthetic bulletin",
         "Example Sports",
+        "Synthetic News — Synthetic bulletin",
     ]
-    assert all_channels.children[0].identifier == f"entry/{ENTRY_ID}/channel/{CHANNEL_ID}"
-    assert all_channels.children[0].can_play is True
-    assert all_channels.children[0].media_class == "video"
-    assert all_channels.children[0].media_content_type == "video/mp4"
+    news = all_channels.children[1]
+    assert news.identifier == f"entry/{ENTRY_ID}/channel/{CHANNEL_ID}"
+    assert news.can_play is True
+    assert news.media_class == "video"
+    assert news.media_content_type == "video/mp4"
+    assert news.thumbnail == "https://media.example.invalid/api/channels/logos/17/cache/"
     assert all(child.media_content_type.startswith("video/") for child in all_channels.children)
 
 
@@ -102,6 +115,7 @@ async def test_root_and_all_channel_browsing(media_source):
 async def test_default_browse_mime_is_mpeg_ts(media_source):
     source, hass = media_source
     hass.data[DOMAIN][ENTRY_ID].entry.options.pop(CONF_OUTPUT_FORMAT)
+    hass.data[DOMAIN][ENTRY_ID].data["output_profiles"] = []
 
     all_channels = await source.async_browse_media(item(hass, f"entry/{ENTRY_ID}/all"))
 
@@ -118,7 +132,7 @@ async def test_group_and_profile_filtering(media_source):
 
     groups = await source.async_browse_media(item(hass, f"entry/{ENTRY_ID}/groups"))
     profiles = await source.async_browse_media(item(hass, f"entry/{ENTRY_ID}/profiles"))
-    assert [child.title for child in groups.children] == ["Example group"]
+    assert [child.title for child in groups.children] == ["alpha group", "Example group"]
     assert [child.title for child in profiles.children] == ["Example profile"]
 
 
@@ -138,6 +152,31 @@ async def test_resolve_uses_playback_url_and_safe_options(media_source):
         "?output_profile=4&output_format=fmp4"
     )
     assert result.mime_type == "video/mp4"
+
+
+@pytest.mark.asyncio
+async def test_resolve_automatically_uses_unique_active_aac_profile(media_source):
+    source, hass = media_source
+    hass.data[DOMAIN][ENTRY_ID].entry.options = {}
+
+    result = await source.async_resolve_media(item(hass, f"entry/{ENTRY_ID}/channel/{CHANNEL_ID}"))
+
+    assert result.url.endswith("?output_profile=12&output_format=fmp4")
+    assert result.mime_type == "video/mp4"
+
+
+@pytest.mark.asyncio
+async def test_resolve_does_not_guess_between_multiple_aac_profiles(media_source):
+    source, hass = media_source
+    coordinator = hass.data[DOMAIN][ENTRY_ID]
+    coordinator.entry.options = {}
+    coordinator.data["output_profiles"].append({"id": 13, "is_active": True, "command": "-c:a aac"})
+
+    result = await source.async_resolve_media(item(hass, f"entry/{ENTRY_ID}/channel/{CHANNEL_ID}"))
+
+    assert "output_profile" not in result.url
+    assert "output_format" not in result.url
+    assert result.mime_type == "video/mp2t"
 
 
 @pytest.mark.asyncio
