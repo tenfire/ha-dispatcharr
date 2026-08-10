@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
 from homeassistant.components.media_player.browse_media import SearchMediaQuery
@@ -39,6 +40,11 @@ def media_source():
     )
     coordinator = SimpleNamespace(
         entry=entry,
+        client=SimpleNamespace(
+            current_programs=AsyncMock(
+                return_value={CHANNEL_ID: {"title": "Fresh synthetic bulletin"}}
+            )
+        ),
         data={
             "channels": [
                 {
@@ -136,7 +142,7 @@ async def test_direct_channel_browse_rejects_unknown_uuid(media_source):
 
 @pytest.mark.asyncio
 async def test_direct_programme_browse_returns_current_epg_title(media_source):
-    """Current EPG data is available through a separate public metadata leaf."""
+    """Direct programme metadata bypasses the stale inventory snapshot."""
     source, hass = media_source
 
     programme = await source.async_browse_media(
@@ -145,16 +151,18 @@ async def test_direct_programme_browse_returns_current_epg_title(media_source):
 
     assert programme.domain == DOMAIN
     assert programme.identifier == f"entry/{ENTRY_ID}/programme/{CHANNEL_ID}"
-    assert programme.title == "Synthetic bulletin"
+    assert programme.title == "Fresh synthetic bulletin"
     assert programme.can_play is False
     assert programme.can_expand is False
     assert programme.thumbnail is None
+    hass.data[DOMAIN][ENTRY_ID].client.current_programs.assert_awaited_once_with([CHANNEL_ID])
 
 
 @pytest.mark.asyncio
 async def test_direct_programme_browse_rejects_missing_epg(media_source):
     """A channel without a current programme has no programme metadata leaf."""
     source, hass = media_source
+    hass.data[DOMAIN][ENTRY_ID].client.current_programs.return_value = {}
 
     with pytest.raises(ValueError, match="No current Dispatcharr programme"):
         await source.async_browse_media(item(hass, f"entry/{ENTRY_ID}/programme/channel-beta"))

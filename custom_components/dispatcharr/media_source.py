@@ -241,7 +241,8 @@ class DispatcharrMediaSource(MediaSource):
                 leaf = self._leaf(coordinator, channel)
                 leaf.title = self._name(channel)
                 return leaf
-            program_title = self._program_title(data.get("programs", {}), uuid)
+            programs = await coordinator.client.current_programs([uuid])
+            program_title = self._program_title(programs, uuid)
             if program_title is None:
                 raise ValueError("No current Dispatcharr programme")
             return BrowseMediaSource(
