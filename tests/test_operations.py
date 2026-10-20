@@ -125,6 +125,76 @@ def test_sensor_values_are_low_cardinality():
     assert DispatcharrSensor(value, descriptions["active_streams"]).native_value == 3
 
 
+def test_sensor_reads_live_count_from_combined_stats():
+    value = SimpleNamespace(
+        entry=SimpleNamespace(entry_id="synthetic-entry"),
+        data={
+            "channels": [],
+            "sources": [],
+            "stats": {"live": {"channels": [], "count": 1}},
+        },
+        async_add_listener=lambda callback, context=None: lambda: None,
+        last_update_success=True,
+    )
+    descriptions = {description.key: description for description in DESCRIPTIONS}
+    assert DispatcharrSensor(value, descriptions["active_streams"]).native_value == 1
+
+
+def test_active_streams_sensor_exposes_live_details():
+    value = SimpleNamespace(
+        entry=SimpleNamespace(entry_id="synthetic-entry"),
+        data={
+            "channels": [],
+            "sources": [],
+            "stats": {
+                "live": {
+                    "channels": [
+                        {
+                            "channel_name": "Synthetic channel",
+                            "client_count": 2,
+                            "avg_bitrate": "4.00 Mbps",
+                            "avg_bitrate_kbps": 4000.0,
+                            "resolution": "1920x1080",
+                            "video_codec": "h264",
+                            "audio_codec": "aac",
+                            "source_fps": 30.0,
+                            "uptime": 60.0,
+                            "stream_type": "mpegts",
+                        }
+                    ],
+                    "count": 1,
+                },
+                "vod": {},
+                "catchup": {},
+            },
+        },
+        async_add_listener=lambda callback, context=None: lambda: None,
+        last_update_success=True,
+    )
+    descriptions = {description.key: description for description in DESCRIPTIONS}
+    sensor = DispatcharrSensor(value, descriptions["active_streams"])
+    assert sensor.native_value == 1
+    assert sensor.extra_state_attributes == {
+        "streams": [
+            {
+                "channel": "Synthetic channel",
+                "clients": 2,
+                "bitrate": "4.00 Mbps",
+                "bitrate_kbps": 4000.0,
+                "resolution": "1920x1080",
+                "video_codec": "h264",
+                "audio_codec": "aac",
+                "fps": 30.0,
+                "uptime": 60.0,
+                "stream_type": "mpegts",
+            }
+        ],
+        "total_clients": 2,
+        "total_bitrate_kbps": 4000.0,
+    }
+    assert DispatcharrSensor(value, descriptions["channels"]).extra_state_attributes is None
+
+
 @pytest.mark.asyncio
 async def test_diagnostics_only_return_redacted_aggregates():
     value = coordinator()

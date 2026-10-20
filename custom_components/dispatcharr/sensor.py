@@ -75,7 +75,7 @@ class DispatcharrSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self):
-        d = self.coordinator.data
+        d = self.coordinator.data or {}
         if self.entity_description.data_key:
             return len(d.get(self.entity_description.data_key, []))
         if self.entity_description.key == "failed_epg_sources":
@@ -84,5 +84,38 @@ class DispatcharrSensor(CoordinatorEntity, SensorEntity):
                 for x in d.get("sources", [])
                 if str(x.get("status", "")).lower() in {"failed", "error"}
             )
-        stats = d.get("stats", {})
+        stats = d.get("stats", {}) or {}
+        live = stats.get("live")
+        if isinstance(live, dict):
+            return live.get("count", 0)
         return stats.get("active_streams", stats.get("streams", 0))
+
+    @property
+    def extra_state_attributes(self):
+        if self.entity_description.key != "active_streams":
+            return None
+        data = self.coordinator.data or {}
+        stats = data.get("stats", {}) or {}
+        live = stats.get("live") if isinstance(stats.get("live"), dict) else {}
+        streams = [
+            {
+                "channel": channel.get("channel_name") or channel.get("stream_name"),
+                "clients": channel.get("client_count", 0),
+                "bitrate": channel.get("avg_bitrate"),
+                "bitrate_kbps": channel.get("avg_bitrate_kbps"),
+                "resolution": channel.get("resolution"),
+                "video_codec": channel.get("video_codec"),
+                "audio_codec": channel.get("audio_codec"),
+                "fps": channel.get("source_fps"),
+                "uptime": channel.get("uptime"),
+                "stream_type": channel.get("stream_type"),
+            }
+            for channel in live.get("channels") or []
+        ]
+        return {
+            "streams": streams,
+            "total_clients": sum(stream["clients"] or 0 for stream in streams),
+            "total_bitrate_kbps": round(
+                sum(stream["bitrate_kbps"] or 0 for stream in streams), 1
+            ),
+        }

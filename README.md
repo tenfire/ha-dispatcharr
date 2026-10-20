@@ -42,7 +42,7 @@ The integration creates one device with low-cardinality status sensors:
 
 - **Channels**, **Groups**, **M3U accounts**, and **EPG sources** are catalogue counts.
 - **Failed EPG sources** counts sources whose latest status is failed/error.
-- **Active streams** is optional and appears only when proxy-stat polling is enabled.
+- **Active streams** is optional and appears only when proxy-stat polling is enabled. It also exposes the current live streams as a `streams` attribute list (channel, clients, bitrate, resolution, codecs, uptime), plus `total_clients` and `total_bitrate_kbps` for dashboards.
 
 Refresh buttons explicitly identify their scope. **Refresh all M3U accounts** and **Refresh all EPG sources** queue global updates; per-account/source buttons queue only the named item. HTTP 202 means **accepted/queued**, not completed. These controls do not delete sources or channel data.
 
