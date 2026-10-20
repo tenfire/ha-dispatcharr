@@ -75,7 +75,7 @@ class DispatcharrSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self):
-        d = self.coordinator.data
+        d = self.coordinator.data or {}
         if self.entity_description.data_key:
             return len(d.get(self.entity_description.data_key, []))
         if self.entity_description.key == "failed_epg_sources":
@@ -84,5 +84,8 @@ class DispatcharrSensor(CoordinatorEntity, SensorEntity):
                 for x in d.get("sources", [])
                 if str(x.get("status", "")).lower() in {"failed", "error"}
             )
-        stats = d.get("stats", {})
+        stats = d.get("stats", {}) or {}
+        live = stats.get("live")
+        if isinstance(live, dict):
+            return live.get("count", 0)
         return stats.get("active_streams", stats.get("streams", 0))

@@ -125,6 +125,21 @@ def test_sensor_values_are_low_cardinality():
     assert DispatcharrSensor(value, descriptions["active_streams"]).native_value == 3
 
 
+def test_sensor_reads_live_count_from_combined_stats():
+    value = SimpleNamespace(
+        entry=SimpleNamespace(entry_id="synthetic-entry"),
+        data={
+            "channels": [],
+            "sources": [],
+            "stats": {"live": {"channels": [], "count": 1}},
+        },
+        async_add_listener=lambda callback, context=None: lambda: None,
+        last_update_success=True,
+    )
+    descriptions = {description.key: description for description in DESCRIPTIONS}
+    assert DispatcharrSensor(value, descriptions["active_streams"]).native_value == 1
+
+
 @pytest.mark.asyncio
 async def test_diagnostics_only_return_redacted_aggregates():
     value = coordinator()
